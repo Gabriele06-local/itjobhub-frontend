@@ -540,6 +540,8 @@
   "profile.cv_error_image_based": "Image-based PDF, cannot be parsed as text",
   "profile.cv_error_upload": "Error uploading CV",
   "profile.cv_error_parse": "Error analyzing CV",
+  "profile.cv_no_data": "The analysis could not extract any data from the CV (check the file or AI configuration)",
+  "profile.cv_load_error": "Could not load saved CVs",
   "profile.portfolio_url_label": "Portfolio URL",
   "profile.portfolio_url_placeholder": "https://your-portfolio.dev",
   "profile.portfolio_saved": "Portfolio updated",

@@ -1,6 +1,7 @@
 import {
   component$,
   useStore,
+  useTask$,
   $,
   type QRL,
   useStylesScoped$,
@@ -12,6 +13,16 @@ import { Spinner } from "~/components/ui/spinner";
 import styles from "./cv-upload-step.css?inline";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+// The AI parse endpoint returns an all-empty profile (confidence 0) when it
+// can't extract anything — e.g. GROQ not configured server-side. Detect that
+// so we can tell the user instead of silently applying empty values.
+const isEmptyExtraction = (p: ExtractedProfile): boolean =>
+  (p.confidence ?? 0) === 0 &&
+  p.skills.length === 0 &&
+  p.languages.length === 0 &&
+  !p.seniority &&
+  !p.availability;
 
 const CV_LANGUAGES = [
   { code: "it", labelKey: "cv.lang.it" },
@@ -41,6 +52,7 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
   const errSize = t("profile.cv_error_size");
   const errUpload = t("profile.cv_error_upload");
   const errParse = t("profile.cv_error_parse");
+  const errNoData = t("profile.cv_no_data");
   const labelParseBtn = t("wizard.cv_parse_btn");
   const labelParsing = t("wizard.cv_parsing");
   const labelUploadBtn = t("wizard.cv_upload_btn");
@@ -57,6 +69,16 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
     cvs: props.existingCvs ? [...props.existingCvs] : ([] as CvRecord[]),
     portfolioUrl: props.portfolioUrl || "",
     lastParsedCvId: "",
+  });
+
+  // Keep the internal CV list in sync with parent-loaded data. In profile mode
+  // the parent fetches CVs asynchronously after mount, so the initial snapshot
+  // would otherwise stay empty and uploaded CVs would "disappear" on refresh.
+  useTask$(({ track }) => {
+    const incoming = track(() => props.existingCvs);
+    if (incoming) {
+      state.cvs = [...incoming];
+    }
   });
 
   const handleFileSelect = $((file: File) => {
@@ -114,8 +136,12 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
         state.isParsing = true;
         try {
           const extracted = await parseCV(props.token, cv.id);
-          state.prefillApplied = true;
-          props.onParsed$(extracted);
+          if (isEmptyExtraction(extracted)) {
+            state.parseError = errNoData;
+          } else {
+            state.prefillApplied = true;
+            props.onParsed$(extracted);
+          }
         } catch {
           state.parseError = errParse;
         } finally {
@@ -136,9 +162,13 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
     state.parseError = "";
     try {
       const extracted = await parseCV(props.token, cvId);
-      state.prefillApplied = true;
-      if (props.onParsed$) {
-        props.onParsed$(extracted);
+      if (isEmptyExtraction(extracted)) {
+        state.parseError = errNoData;
+      } else {
+        state.prefillApplied = true;
+        if (props.onParsed$) {
+          props.onParsed$(extracted);
+        }
       }
     } catch (err) {
       state.parseError = err instanceof Error ? err.message : errParse;

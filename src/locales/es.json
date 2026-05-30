@@ -541,6 +541,8 @@
   "profile.cv_error_image_based": "PDF basado en im\u00e1genes, no se puede analizar",
   "profile.cv_error_upload": "Error al subir el CV",
   "profile.cv_error_parse": "Error al analizar el CV",
+  "profile.cv_no_data": "El análisis no extrajo datos del CV (revisa el archivo o la configuración de IA)",
+  "profile.cv_load_error": "No se pudieron cargar los CV guardados",
   "profile.portfolio_url_label": "URL Portfolio",
   "profile.portfolio_url_placeholder": "https://tu-portfolio.dev",
   "profile.portfolio_saved": "Portfolio actualizado",
