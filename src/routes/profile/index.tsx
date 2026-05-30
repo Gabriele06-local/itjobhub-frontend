@@ -180,7 +180,12 @@ export default component$(() => {
         state.cvs = cvs;
         state.portfolioUrl = auth.user?.portfolioUrl || "";
       })
-      .catch(() => {});
+      .catch(() => {
+        state.message = {
+          type: "error",
+          text: translate("profile.cv_load_error", i18n.currentLanguage),
+        };
+      });
   });
 
   const handleSavePortfolio = $(async () => {
