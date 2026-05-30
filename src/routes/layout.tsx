@@ -57,6 +57,7 @@ export const useAuthLoader = routeLoader$(async ({ cookie, url, redirect }) => {
             seniority: bu.profile?.seniority,
             availability: bu.profile?.availability,
             workModes: bu.profile?.workModes || [],
+            portfolioUrl: bu.profile?.portfolioUrl,
             // Profile completion is now calculated by backend
             profileCompleted: bu.profileCompleted,
           };

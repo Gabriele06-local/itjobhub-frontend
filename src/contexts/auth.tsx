@@ -444,6 +444,7 @@ export const AuthProvider = component$(
               availability: backendProfile.availability,
               workModes: backendProfile.workModes,
               salaryMin: backendProfile.salaryMin,
+              portfolioUrl: backendProfile.portfolioUrl,
               profileCompleted: true,
             };
           }
