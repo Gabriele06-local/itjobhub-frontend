@@ -61,7 +61,9 @@ export const parseCV = async (
   if (!res.ok || !data.success) {
     // Attach the HTTP status so callers can localize known cases (e.g. the
     // 429 rate-limit) instead of surfacing the raw backend message.
-    const error = new Error(data.message || "Failed to parse CV") as Error & { status?: number };
+    const error = new Error(data.message || "Failed to parse CV") as Error & {
+      status?: number;
+    };
     error.status = res.status;
     throw error;
   }
