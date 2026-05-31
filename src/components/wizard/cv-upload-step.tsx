@@ -2,10 +2,11 @@ import {
   component$,
   useStore,
   $,
+  useContext,
   type QRL,
   useStylesScoped$,
 } from "@builder.io/qwik";
-import { useTranslate } from "~/contexts/i18n";
+import { useTranslate, I18nContext } from "~/contexts/i18n";
 import type { CvRecord, ExtractedProfile } from "~/contexts/auth";
 import { uploadCV, deleteCV, parseCV } from "~/utils/cv-api";
 import { Spinner } from "~/components/ui/spinner";
@@ -35,6 +36,7 @@ interface CvUploadStepProps {
 export const CvUploadStep = component$<CvUploadStepProps>((props) => {
   useStylesScoped$(styles);
   const t = useTranslate();
+  const i18n = useContext(I18nContext);
 
   // Pre-compute translation strings so they can be serialized in $() closures
   const errType = t("profile.cv_error_type");
@@ -45,8 +47,12 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
   const labelParsing = t("wizard.cv_parsing");
   const labelUploadBtn = t("wizard.cv_upload_btn");
 
+  const initialLang = CV_LANGUAGES.some((l) => l.code === i18n.currentLanguage)
+    ? i18n.currentLanguage
+    : "en";
+
   const state = useStore({
-    selectedLanguage: "en",
+    selectedLanguage: initialLang,
     isDragOver: false,
     selectedFile: null as File | null,
     isUploading: false,
