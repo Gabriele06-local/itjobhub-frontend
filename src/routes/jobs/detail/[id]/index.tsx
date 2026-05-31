@@ -75,7 +75,30 @@ export const useJobLoader = routeLoader$(async ({ params, cookie, status }) => {
         }
       }
 
-      return { job, matchScore };
+      // Daily application quota (authenticated only) — lets us disable the
+      // Apply button preventively once the user hits the per-day limit.
+      let applyQuota: {
+        todayCount: number;
+        limit: number;
+        remaining: number;
+      } | null = null;
+      if (tokenCookie?.value) {
+        try {
+          const quotaRes = await fetch(`${API_URL}/jobs/me/apply-quota`, {
+            headers,
+          });
+          if (quotaRes.ok) {
+            const quotaResult = await quotaRes.json();
+            if (quotaResult.success) {
+              applyQuota = quotaResult.data;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch apply quota in loader", e);
+        }
+      }
+
+      return { job, matchScore, applyQuota };
     }
 
     return null;
@@ -100,6 +123,13 @@ export default component$(() => {
     job: jobSignal.value?.job || null,
     matchScore: jobSignal.value?.matchScore || null,
     isDeleting: false,
+    // null => unknown/anonymous (no per-day limit). Number => applications left today.
+    applyRemaining:
+      (jobSignal.value as { applyQuota?: { remaining: number } } | null)
+        ?.applyQuota?.remaining ?? null,
+    applyLimit:
+      (jobSignal.value as { applyQuota?: { limit: number } } | null)?.applyQuota
+        ?.limit ?? 3,
   });
 
   const showDeleteModal = useSignal(false);
@@ -165,11 +195,18 @@ export default component$(() => {
     }
   });
 
-  const handleApplyClick = $(() => {
-    if (state.job) {
-      jobsContext.trackJobInteraction$(state.job.id, "APPLY");
-      // Optimistic local update
+  const handleApplyClick = $(async () => {
+    if (!state.job) return;
+    const res = await jobsContext.trackJobInteraction$(state.job.id, "APPLY");
+    if (res.limitReached) {
+      // Server rejected it (429): mark the quota exhausted so the button
+      // disables and the message shows. Do NOT bump the counter.
+      state.applyRemaining = 0;
+    } else if (res.ok) {
       state.job.clicks_count = (state.job.clicks_count || 0) + 1;
+      if (state.applyRemaining !== null && state.applyRemaining > 0) {
+        state.applyRemaining = state.applyRemaining - 1;
+      }
     }
   });
 
@@ -255,6 +292,10 @@ export default component$(() => {
           onReactionComplete$={handleReactionComplete}
           onDeleteJob$={handleDeleteJob}
           onAddSkill$={handleAddSkill}
+          applyDisabled={
+            state.applyRemaining !== null && state.applyRemaining <= 0
+          }
+          applyLimit={state.applyLimit}
         />
       )}
     </div>

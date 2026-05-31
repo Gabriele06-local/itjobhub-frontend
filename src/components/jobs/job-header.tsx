@@ -19,10 +19,18 @@ interface JobHeaderProps {
   onApplyClick$: PropFunction<() => void>;
   onReaction$?: PropFunction<(type: "LIKE" | "DISLIKE", count: number) => void>;
   onReactionComplete$?: PropFunction<() => void>;
+  applyDisabled?: boolean;
+  applyLimit?: number;
 }
 
 export const JobHeader = component$<JobHeaderProps>((props) => {
-  const { job, isAuthenticated, onReaction$, onReactionComplete$ } = props;
+  const {
+    job,
+    isAuthenticated,
+    onReaction$,
+    onReactionComplete$,
+    applyDisabled,
+  } = props;
   const i18n = useI18n();
   useStylesScoped$(styles);
 
@@ -130,16 +138,35 @@ export const JobHeader = component$<JobHeaderProps>((props) => {
             </svg>
           </button>
 
-          <a
-            href={job.externalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick$={props.onApplyClick$}
-            class="px-8 py-3 w-auto text-base btn-primary"
-            data-testid="apply-button"
-          >
-            {t("job.apply")}
-          </a>
+          {applyDisabled ? (
+            <div class="flex flex-col gap-1">
+              <button
+                type="button"
+                disabled
+                class="opacity-60 px-8 py-3 w-auto text-base btn-primary cursor-not-allowed"
+                data-testid="apply-button"
+              >
+                {t("job.apply")}
+              </button>
+              <span class="text-sm text-red-600" data-testid="apply-limit-msg">
+                {t("job.daily_limit_reached").replace(
+                  "{limit}",
+                  String(props.applyLimit ?? 3),
+                )}
+              </span>
+            </div>
+          ) : (
+            <a
+              href={job.externalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick$={props.onApplyClick$}
+              class="px-8 py-3 w-auto text-base btn-primary"
+              data-testid="apply-button"
+            >
+              {t("job.apply")}
+            </a>
+          )}
 
           {!isAuthenticated && (
             <div class="loginHint">

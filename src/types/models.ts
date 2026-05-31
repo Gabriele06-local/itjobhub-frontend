@@ -68,6 +68,8 @@ export interface MatchScore {
     timeliness: number;
     competition: number;
     applicationRate: number;
+    salaryMatch?: number;
+    employmentMatch?: number;
   };
   details: {
     matchedSkills: string[];
