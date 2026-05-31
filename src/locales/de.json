@@ -540,6 +540,7 @@
   "profile.cv_error_image_based": "Bildbasiertes PDF, kann nicht als Text analysiert werden",
   "profile.cv_error_upload": "Fehler beim Hochladen des Lebenslaufs",
   "profile.cv_error_parse": "Fehler bei der Analyse des Lebenslaufs",
+  "profile.cv_error_rate_limit": "Zu viele Analyseanfragen. Bitte eine Minute warten.",
   "profile.cv_no_data": "Die Analyse konnte keine Daten aus dem Lebenslauf extrahieren (Datei oder KI-Konfiguration prüfen)",
   "profile.cv_load_error": "Gespeicherte Lebensläufe konnten nicht geladen werden",
   "profile.portfolio_url_label": "Portfolio-URL",
