@@ -63,6 +63,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
   const location = url.searchParams.get("location") || "";
   const dateRange = url.searchParams.get("dateRange") || "";
   const minMatchScore = url.searchParams.get("minMatchScore") || "";
+  const personalized = url.searchParams.get("personalized") || "";
   const lat = url.searchParams.get("lat") || "";
   const lng = url.searchParams.get("lng") || "";
   const page = 1;
@@ -96,6 +97,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
   if (dateRange) endpoint.searchParams.append("dateRange", dateRange);
   if (minMatchScore)
     endpoint.searchParams.append("minMatchScore", minMatchScore);
+  if (personalized) endpoint.searchParams.append("personalized", personalized);
   if (lat) endpoint.searchParams.append("lat", lat);
   if (lng) endpoint.searchParams.append("lng", lng);
   if (lat && lng) endpoint.searchParams.append("radius_km", "50");
@@ -130,6 +132,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
         availability,
         location,
         dateRange,
+        personalized: personalized === "true",
         minMatchScore: minMatchScore ? Number(minMatchScore) : undefined,
         lat: lat ? Number(lat) : undefined,
         lng: lng ? Number(lng) : undefined,
@@ -371,6 +374,9 @@ export default component$(() => {
       if (userAvailability && validEmploymentTypes.includes(userAvailability))
         url.searchParams.set("availability", userAvailability);
       url.searchParams.set("looseSeniority", "true");
+      // Server-side personalized ranking: keep only jobs with >=50% of the
+      // job's required skills owned AND overall compatibility >=60%.
+      url.searchParams.set("personalized", "true");
     } else {
       // Reset to all jobs but keep language filter if applicable
       url.searchParams.delete("skills");
@@ -378,6 +384,7 @@ export default component$(() => {
       url.searchParams.delete("seniority");
       url.searchParams.delete("availability");
       url.searchParams.delete("looseSeniority");
+      url.searchParams.delete("personalized");
     }
     nav(url.pathname + url.search);
   });
