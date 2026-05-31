@@ -7,7 +7,7 @@ import {
   type QRL,
   useStylesScoped$,
 } from "@builder.io/qwik";
-import { useTranslate, I18nContext } from "~/contexts/i18n";
+import { useTranslate, I18nContext, type SupportedLanguage } from "~/contexts/i18n";
 import type { CvRecord, ExtractedProfile } from "~/contexts/auth";
 import { uploadCV, deleteCV, parseCV } from "~/utils/cv-api";
 import { Spinner } from "~/components/ui/spinner";
@@ -212,7 +212,8 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
             class="cv-select"
             value={state.selectedLanguage}
             onChange$={(e) =>
-              (state.selectedLanguage = (e.target as HTMLSelectElement).value)
+              (state.selectedLanguage = (e.target as HTMLSelectElement)
+                .value as SupportedLanguage)
             }
             aria-label={t("wizard.cv_language_label")}
           >
