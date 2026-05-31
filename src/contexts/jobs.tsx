@@ -321,8 +321,15 @@ export const JobsProvider = component$(() => {
             url.searchParams.append("employment_type", filters.availability);
           if (filters?.location)
             url.searchParams.append("location", filters.location);
-          if (filters?.dateRange)
+          if (filters?.dateRange) {
             url.searchParams.append("dateRange", filters.dateRange);
+            // Send the browser UTC offset so the backend can bound "today" by
+            // the user's local day, matching the locally-displayed date.
+            url.searchParams.append(
+              "tzOffset",
+              String(new Date().getTimezoneOffset()),
+            );
+          }
           if (filters?.remote !== undefined)
             url.searchParams.append("remote", String(filters.remote));
           if (filters?.languages?.length)

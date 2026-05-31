@@ -539,6 +539,7 @@
   "profile.cv_error_image_based": "PDF basé sur des images, impossible à analyser",
   "profile.cv_error_upload": "Erreur lors du téléchargement du CV",
   "profile.cv_error_parse": "Erreur lors de l'analyse du CV",
+  "profile.cv_error_rate_limit": "Trop de demandes d'analyse. Veuillez patienter une minute.",
   "profile.cv_no_data": "L'analyse n'a extrait aucune donnée du CV (vérifiez le fichier ou la configuration de l'IA)",
   "profile.cv_load_error": "Impossible de charger les CV enregistrés",
   "profile.portfolio_url_label": "URL Portfolio",

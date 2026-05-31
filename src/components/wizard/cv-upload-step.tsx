@@ -54,6 +54,7 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
   const errSize = t("profile.cv_error_size");
   const errUpload = t("profile.cv_error_upload");
   const errParse = t("profile.cv_error_parse");
+  const errRateLimit = t("profile.cv_error_rate_limit");
   const errNoData = t("profile.cv_no_data");
   const labelParseBtn = t("wizard.cv_parse_btn");
   const labelParsing = t("wizard.cv_parsing");
@@ -148,8 +149,9 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
             state.prefillApplied = true;
             props.onParsed$(extracted);
           }
-        } catch {
-          state.parseError = errParse;
+        } catch (err) {
+          state.parseError =
+            (err as { status?: number })?.status === 429 ? errRateLimit : errParse;
         } finally {
           state.isParsing = false;
         }
@@ -177,7 +179,10 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
         }
       }
     } catch (err) {
-      state.parseError = err instanceof Error ? err.message : errParse;
+      // Never surface the raw backend message (English); map to a localized
+      // string in the user's navigation language.
+      state.parseError =
+        (err as { status?: number })?.status === 429 ? errRateLimit : errParse;
     } finally {
       state.isParsing = false;
     }

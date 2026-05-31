@@ -872,7 +872,7 @@ export default component$(() => {
       </div>
       {/* Documents Section */}
       <div
-        class="bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden"
+        class="mt-6 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden"
         data-testid="cv-section"
       >
         <div class="p-8">
