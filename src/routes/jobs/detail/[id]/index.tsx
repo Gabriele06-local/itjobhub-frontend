@@ -223,7 +223,7 @@ export default component$(() => {
       languages: auth.user.languages || [],
       skills: newSkills,
       seniority: auth.user.seniority || "",
-      availability: auth.user.availability || "",
+      availability: auth.user.availability || [],
       workModes: auth.user.workModes || [],
       salaryMin: auth.user.salaryMin || 0,
     };

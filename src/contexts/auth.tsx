@@ -51,7 +51,7 @@ export interface User {
   languages?: string[];
   skills?: string[];
   seniority?: "junior" | "mid" | "senior";
-  availability?: "full-time" | "part-time" | "busy";
+  availability?: string[];
   workModes?: string[];
   profileCompleted?: boolean;
   role?: string;
@@ -68,7 +68,7 @@ export interface WizardData {
   languages: string[];
   skills: string[];
   seniority: "junior" | "mid" | "senior" | "";
-  availability: "full-time" | "part-time" | "busy" | "";
+  availability: string[];
   workModes: string[];
   salaryMin: number;
   portfolioUrl?: string;
@@ -144,7 +144,7 @@ export interface BackendUser {
     languages?: string[];
     skills?: string[];
     seniority?: "junior" | "mid" | "senior";
-    availability?: "full-time" | "part-time" | "busy";
+    availability?: string[];
     workModes?: string[];
     bio?: string;
     portfolioUrl?: string;

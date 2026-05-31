@@ -98,7 +98,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
         languages: initialData?.languages || [],
         skills: initialData?.skills || [],
         seniority: initialData?.seniority || "",
-        availability: initialData?.availability || "",
+        availability: initialData?.availability || [],
         workModes: initialData?.workModes || [],
         salaryMin: initialData?.salaryMin ?? 0,
         portfolioUrl: initialData?.portfolioUrl || "",
@@ -132,8 +132,8 @@ export const ProfileWizard = component$<ProfileWizardProps>(
       if (extracted.seniority && !state.data.seniority) {
         state.data.seniority = extracted.seniority;
       }
-      if (extracted.availability && !state.data.availability) {
-        state.data.availability = extracted.availability;
+      if (extracted.availability && state.data.availability.length === 0) {
+        state.data.availability = [extracted.availability];
       }
       if (extracted.workModes.length > 0 && state.data.workModes.length === 0) {
         state.data.workModes = [...extracted.workModes];
@@ -158,7 +158,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
           case 4:
             return state.data.workModes.length > 0;
           case 5:
-            return state.data.availability !== "";
+            return state.data.availability.length > 0;
           case 6:
             return state.data.salaryMin >= 0;
           default:
@@ -175,7 +175,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
           case 4:
             return state.data.workModes.length > 0;
           case 5:
-            return state.data.availability !== "";
+            return state.data.availability.length > 0;
           case 6:
             return state.data.salaryMin >= 0;
           default:
@@ -415,7 +415,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                       key={option.value}
                       for={`availability-${option.value}`}
                       class={`option-card ${
-                        state.data.availability === option.value
+                        state.data.availability.includes(option.value)
                           ? "option-card-selected"
                           : "option-card-default"
                       }`}
@@ -423,14 +423,16 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                       <input
                         id={`availability-${option.value}`}
                         aria-label={t(option.labelKey)}
-                        type="radio"
+                        type="checkbox"
                         name="availability"
                         value={option.value}
-                        checked={state.data.availability === option.value}
-                        onChange$={() =>
-                          (state.data.availability =
-                            option.value as WizardData["availability"])
-                        }
+                        checked={state.data.availability.includes(option.value)}
+                        onChange$={() => {
+                          const set = new Set(state.data.availability);
+                          if (set.has(option.value)) set.delete(option.value);
+                          else set.add(option.value);
+                          state.data.availability = Array.from(set);
+                        }}
                         class="option-input"
                       />
                       <div class="option-content">

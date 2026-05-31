@@ -67,9 +67,7 @@ export default component$(() => {
     languages: auth.user?.languages || [],
     skills: auth.user?.skills || [],
     seniority: (auth.user?.seniority as "junior" | "mid" | "senior" | "") || "",
-    availability:
-      (auth.user?.availability as "full-time" | "part-time" | "busy" | "") ||
-      "",
+    availability: auth.user?.availability || [],
     workModes: auth.user?.workModes || [],
     salaryMin: auth.user?.salaryMin || 0,
     portfolioUrl: auth.user?.portfolioUrl || "",

@@ -353,7 +353,9 @@ export default component$(() => {
         "internship",
         "hybrid",
       ];
-      const userAvailability = auth.user.availability
+      // availability is now multi-select; the backend employment_type filter
+      // takes a single value, so use the first selected type for the feed.
+      const userAvailability = auth.user.availability?.[0]
         ?.toLowerCase()
         .replace("_", "-");
 
@@ -492,12 +494,11 @@ export default component$(() => {
         <JobSearch
           onSearch$={handleSearch}
           initialLocation={
-            initialLocation || (
-              auth.user?.workModes?.length === 1 &&
-              auth.user?.workModes[0] === "remote"
-                ? undefined
-                : auth.user?.location || undefined
-            )
+            initialLocation ||
+            (auth.user?.workModes?.length === 1 &&
+            auth.user?.workModes[0] === "remote"
+              ? undefined
+              : auth.user?.location || undefined)
           }
           initialGeo={
             auth.user?.workModes?.length === 1 &&
