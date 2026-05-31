@@ -319,6 +319,8 @@ export const JobsProvider = component$(() => {
             url.searchParams.append("seniority", filters.seniority);
           if (filters?.availability)
             url.searchParams.append("employment_type", filters.availability);
+          if (filters?.location)
+            url.searchParams.append("location", filters.location);
           if (filters?.dateRange)
             url.searchParams.append("dateRange", filters.dateRange);
           if (filters?.remote !== undefined)

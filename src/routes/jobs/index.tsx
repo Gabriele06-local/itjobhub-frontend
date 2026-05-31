@@ -80,7 +80,11 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
 
   if (query) endpoint.searchParams.append("q", query);
   if (seniority) endpoint.searchParams.append("seniority", seniority);
-  if (remote) endpoint.searchParams.append("remote", remote);
+  if (remote === "hybrid") {
+    endpoint.searchParams.append("employment_type", "hybrid");
+  } else if (remote) {
+    endpoint.searchParams.append("remote", remote);
+  }
   if (skills) endpoint.searchParams.append("skills", skills);
   if (languages) endpoint.searchParams.append("languages", languages);
   if (looseSeniority)
@@ -153,6 +157,9 @@ export default component$(() => {
   const urlParams = loc.url.searchParams;
   const initialQuery = urlParams.get("q") || "";
   const initialRemote = urlParams.get("remote") || "";
+  const initialSeniority = urlParams.get("seniority") || "";
+  const initialAvailability = urlParams.get("availability") || "";
+  const initialLocation = urlParams.get("location") || "";
   const initialSalaryMinFromUrl = urlParams.get("salary_min") || "";
   const initialSalaryMin = initialSalaryMinFromUrl || "";
   const initialDateRange = urlParams.get("dateRange") || "";
@@ -432,17 +439,14 @@ export default component$(() => {
     } else if (filters.remote === "office") {
       url.searchParams.set("remote", "false");
     } else if (filters.remote === "hybrid") {
-      url.searchParams.set("availability", "hybrid");
+      url.searchParams.set("remote", "hybrid");
     } else {
       url.searchParams.delete("remote");
-      if (url.searchParams.get("availability") === "hybrid") {
-        url.searchParams.delete("availability");
-      }
     }
 
-    if (filters.availability && filters.remote !== "hybrid") {
+    if (filters.availability) {
       url.searchParams.set("availability", filters.availability);
-    } else if (filters.remote !== "hybrid") {
+    } else {
       url.searchParams.delete("availability");
     }
 
@@ -488,10 +492,12 @@ export default component$(() => {
         <JobSearch
           onSearch$={handleSearch}
           initialLocation={
-            auth.user?.workModes?.length === 1 &&
-            auth.user?.workModes[0] === "remote"
-              ? undefined
-              : auth.user?.location || undefined
+            initialLocation || (
+              auth.user?.workModes?.length === 1 &&
+              auth.user?.workModes[0] === "remote"
+                ? undefined
+                : auth.user?.location || undefined
+            )
           }
           initialGeo={
             auth.user?.workModes?.length === 1 &&
@@ -506,12 +512,16 @@ export default component$(() => {
                 : undefined
           }
           initialQuery={initialQuery}
+          initialSeniority={initialSeniority}
+          initialAvailability={initialAvailability}
           initialRemote={
             initialRemote === "true"
               ? "remote"
               : initialRemote === "false"
                 ? "office"
-                : ""
+                : initialRemote === "hybrid"
+                  ? "hybrid"
+                  : ""
           }
           initialSalaryMin={initialSalaryMin}
           initialDateRange={initialDateRange}
