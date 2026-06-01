@@ -87,9 +87,6 @@ export const Navigation = component$(() => {
               <Link href="/news" class="nav-link">
                 {t("nav.news")}
               </Link>
-              <Link href="/contact" class="nav-link">
-                {t("nav.contact")}
-              </Link>
               {auth.user?.role === "admin" && (
                 <Link href="/admin/stats" class="nav-link">
                   {t("nav.dashboard")}
@@ -192,11 +189,57 @@ export const Navigation = component$(() => {
             <div class="desktop-auth">
               {auth.isAuthenticated ? (
                 <>
-                  <Link href="/profile" class="nav-link">
-                    {t("nav.profile")}
+                  <Link
+                    href="/user/messages"
+                    class={`nav-icon-link ${location.url.pathname.startsWith("/user/messages") ? "active" : ""}`}
+                    title={t("nav.messages")}
+                    aria-label={t("nav.messages")}
+                  >
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
                   </Link>
-                  <Link href="/user/messages" class="nav-link">
-                    {t("nav.messages")}
+                  <Link
+                    href="/profile"
+                    class={`nav-icon-link nav-avatar ${location.url.pathname.startsWith("/profile") ? "active" : ""}`}
+                    title={t("nav.profile")}
+                    aria-label={t("nav.profile")}
+                  >
+                    {auth.user?.avatar ? (
+                      <img
+                        src={auth.user.avatar}
+                        alt={t("nav.profile")}
+                        class="nav-avatar-img"
+                        width={28}
+                        height={28}
+                      />
+                    ) : (
+                      <svg
+                        class="w-7 h-7"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    )}
                   </Link>
                   <button
                     onClick$={handleLogout}
@@ -282,12 +325,6 @@ export const Navigation = component$(() => {
               class={`mobile-nav-link ${location.url.pathname.startsWith("/news") ? "active" : ""}`}
             >
               {t("nav.news")}
-            </Link>
-            <Link
-              href="/contact"
-              class={`mobile-nav-link ${location.url.pathname.startsWith("/contact") ? "active" : ""}`}
-            >
-              {t("nav.contact")}
             </Link>
             {auth.user?.role === "admin" && (
               <Link

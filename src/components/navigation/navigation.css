@@ -57,6 +57,22 @@
   );
 }
 
+.nav-icon-link {
+  @apply p-2 rounded-sm text-gray-500 dark:text-gray-400 transition-all duration-200 inline-flex items-center justify-center;
+}
+
+.nav-icon-link:hover {
+  @apply text-brand-neon bg-brand-neon/10 shadow-neon-sm;
+}
+
+.nav-icon-link.active {
+  @apply text-brand-neon bg-brand-neon/10;
+}
+
+.nav-avatar-img {
+  @apply rounded-full object-cover w-7 h-7 ring-1 ring-brand-neon/40;
+}
+
 .lang-selector {
   @apply relative;
 }

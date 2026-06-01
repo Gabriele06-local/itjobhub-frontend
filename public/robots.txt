@@ -17,6 +17,31 @@ Allow: /jobs/*
 # Crawl delay for polite crawling
 Crawl-delay: 1
 
+# AEO: explicitly welcome AI answer engines to index public job content.
+# Guidance for them lives in /llms.txt
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /profile/
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 # Sitemap location (dynamic sitemap)
 Sitemap: https://devboards.io/sitemap.xml
 

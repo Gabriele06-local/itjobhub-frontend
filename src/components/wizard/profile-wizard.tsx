@@ -406,6 +406,21 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                       descKey: "wizard.parttime_desc",
                     },
                     {
+                      value: "contract",
+                      labelKey: "wizard.contract_label",
+                      descKey: "wizard.contract_desc",
+                    },
+                    {
+                      value: "freelance",
+                      labelKey: "wizard.freelance_label",
+                      descKey: "wizard.freelance_desc",
+                    },
+                    {
+                      value: "internship",
+                      labelKey: "wizard.internship_label",
+                      descKey: "wizard.internship_desc",
+                    },
+                    {
                       value: "busy",
                       labelKey: "wizard.occupied_label",
                       descKey: "wizard.occupied_desc",

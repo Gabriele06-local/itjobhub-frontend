@@ -8,7 +8,12 @@ import {
   useSignal,
 } from "@builder.io/qwik";
 import { isServer } from "@builder.io/qwik/build";
-import { routeLoader$, Link, useNavigate } from "@builder.io/qwik-city";
+import {
+  routeLoader$,
+  Link,
+  useNavigate,
+  type DocumentHead,
+} from "@builder.io/qwik-city";
 
 import logger from "~/utils/logger";
 import { useJobs, processApiJob } from "~/contexts/jobs";
@@ -108,6 +113,34 @@ export const useJobLoader = routeLoader$(async ({ params, cookie, status }) => {
     return null;
   }
 });
+
+// Per-job SEO: dynamic <title>/description so each posting ranks on its own
+// (the RouterHead derives canonical + og/twitter from these). Previously the
+// detail page had no head() and inherited the generic site title.
+export const head: DocumentHead = ({ resolveValue }) => {
+  const data = resolveValue(useJobLoader);
+  const job = data?.job;
+  if (!job) {
+    return { title: "DevBoards.io" };
+  }
+  const plain = (job.description || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const where = job.remote ? "Remote" : job.location || "";
+  const context = [job.company, where].filter(Boolean).join(" · ");
+  const description = (plain ? plain.slice(0, 155) : context).trim();
+  const title = `${job.title}${job.company ? ` - ${job.company}` : ""} | DevBoards.io`;
+  const meta: { name?: string; property?: string; content: string }[] = [
+    { name: "description", content: description },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+  ];
+  if (job.companyLogo) {
+    meta.push({ property: "og:image", content: job.companyLogo });
+  }
+  return { title, meta };
+};
 
 export default component$(() => {
   useStylesScoped$(styles);
