@@ -1,4 +1,5 @@
 [test]
 # Only run tests in the src directory (excludes e2e folder)
 root = "./src"
+coverageThreshold = { line = 0.85, function = 0.85 }
 

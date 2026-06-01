@@ -7,7 +7,12 @@ import {
 } from "@builder.io/qwik";
 import { Link, useLocation } from "@builder.io/qwik-city";
 import { useAuth } from "~/contexts/auth";
-import { useI18n, useTranslate, type SupportedLanguage } from "~/contexts/i18n";
+import {
+  useI18n,
+  useTranslate,
+  setLanguage,
+  type SupportedLanguage,
+} from "~/contexts/i18n";
 import { useTheme } from "~/contexts/theme";
 import { Logo } from "~/components/common/logo";
 import styles from "./navigation.css?inline";
@@ -23,7 +28,6 @@ export const Navigation = component$(() => {
   // Extract values and signals to avoid serialization issues
   const currentLanguage = i18n.currentLanguage;
   const logoutSignal = auth.logoutSignal;
-  const setLanguageSignal = i18n.setLanguageSignal;
 
   /* State for mobile menu */
   const state = useStore({
@@ -52,9 +56,9 @@ export const Navigation = component$(() => {
   });
 
   const selectLanguage = $((lang: SupportedLanguage) => {
-    // Trigger language change through signal
-    setLanguageSignal.value = { language: lang };
+    // Persists the cookie and re-renders via SSR — see setLanguage's doc.
     state.showLanguageDropdown = false;
+    setLanguage(lang);
   });
 
   const languages = [

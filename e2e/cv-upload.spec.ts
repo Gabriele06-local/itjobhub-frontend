@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { loginViaAPI, API_BASE, TEST_USERS } from "./fixtures";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+// `__dirname` is not defined in ES module scope — derive it from import.meta.url.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAMPLE_CV = path.join(__dirname, "fixtures/sample-cv.pdf");
 
 test.describe("CV Upload - Wizard Flow", () => {
