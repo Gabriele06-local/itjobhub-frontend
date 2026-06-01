@@ -973,6 +973,8 @@ export const JobsProvider = component$(() => {
             body: JSON.stringify({
               type,
               fingerprint: visitorId,
+              // So the daily apply limit resets at the user's local midnight.
+              tzOffset: String(new Date().getTimezoneOffset()),
             }),
           });
 
