@@ -15,6 +15,7 @@ import { ScrollButtons } from "~/components/ui/scroll-buttons";
 import type { JobFilters, JobListing, ApiPagination } from "~/contexts/jobs";
 import { ItemListSchema, BreadcrumbSchema } from "~/components/seo/json-ld";
 import { SITE_URL } from "~/constants";
+import { workModeFromLegacy, fetchEnums } from "~/lib/enums";
 import logger from "~/utils/logger";
 
 // Import translations for server-side DocumentHead
@@ -36,6 +37,20 @@ export const useJobsHeadLoader = routeLoader$(({ cookie }) => {
     description:
       t["meta.jobs_description"] ||
       "Scopri le migliori opportunità di lavoro nel settore IT.",
+  };
+});
+
+// Load the categorical value lists from the backend single source of truth.
+// Labels are localized client-side via i18n, so we only pass the value lists.
+export const useEnumsLoader = routeLoader$(async ({ cookie }) => {
+  const savedLang =
+    (cookie.get("preferred-language")?.value as SupportedLanguage) || "it";
+  const lang = savedLang in translations ? savedLang : "it";
+  const enums = await fetchEnums(lang);
+  return {
+    seniority: enums.seniority.map((o) => o.value),
+    employmentType: enums.employmentType.map((o) => o.value),
+    workMode: enums.workMode.map((o) => o.value),
   };
 });
 
@@ -154,6 +169,7 @@ export default component$(() => {
   const t = useTranslate();
   const loc = useLocation();
   const jobsLoader = useJobsListLoader();
+  const enumsLoader = useEnumsLoader();
   const jobsState = useJobs();
 
   // Parse search state from URL for initial component state
@@ -442,12 +458,15 @@ export default component$(() => {
       url.searchParams.delete("lng");
     }
 
-    // Map remote selection to API filters
-    if (filters.remote === "remote") {
+    // Map workMode selection to API filters. The select now emits the canonical
+    // "onsite" value; we accept legacy "office" too for back-compat (bookmarked
+    // URLs / older clients) by normalizing through workModeFromLegacy.
+    const workMode = workModeFromLegacy(filters.remote);
+    if (workMode === "remote") {
       url.searchParams.set("remote", "true");
-    } else if (filters.remote === "office") {
+    } else if (workMode === "onsite") {
       url.searchParams.set("remote", "false");
-    } else if (filters.remote === "hybrid") {
+    } else if (workMode === "hybrid") {
       url.searchParams.set("remote", "hybrid");
     } else {
       url.searchParams.delete("remote");
@@ -526,7 +545,7 @@ export default component$(() => {
             initialRemote === "true"
               ? "remote"
               : initialRemote === "false"
-                ? "office"
+                ? "onsite"
                 : initialRemote === "hybrid"
                   ? "hybrid"
                   : ""
@@ -535,6 +554,7 @@ export default component$(() => {
           initialDateRange={initialDateRange}
           initialMinMatchScore={initialMinMatchScore}
           isAuthenticated={auth.isAuthenticated}
+          enumValues={enumsLoader.value}
         />
 
         {/* Filter toggle for authenticated users */}

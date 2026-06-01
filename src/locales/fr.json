@@ -95,6 +95,8 @@
   "jobs.all_modes": "Tous les modes",
   "jobs.remote": "Télétravail",
   "jobs.office": "Sur site",
+  "jobs.onsite": "Sur site",
+  "jobs.busy": "Occupé",
   "jobs.hybrid": "Hybride",
   "jobs.personalized_feed": "🎯 Flux Personnalisé",
   "jobs.all_jobs": "📋 Toutes les Offres",

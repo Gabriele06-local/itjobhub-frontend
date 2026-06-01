@@ -95,6 +95,8 @@
   "jobs.all_modes": "All modes",
   "jobs.remote": "Remote",
   "jobs.office": "On-site",
+  "jobs.onsite": "On-site",
+  "jobs.busy": "Busy",
   "jobs.hybrid": "Hybrid",
   "jobs.personalized_feed": "🎯 Personalized Feed",
   "jobs.all_jobs": "📋 All Jobs",
