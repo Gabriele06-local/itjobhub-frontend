@@ -35,6 +35,11 @@
   @apply flex justify-center space-x-4;
 }
 
+/* Separate the secondary "Contattaci" row from the register/login row above. */
+.actions-secondary {
+  @apply mt-6;
+}
+
 .btn-login {
   @apply inline-flex items-center justify-center bg-transparent border-2 border-brand-neon text-brand-neon px-8 py-3 rounded-sm font-bold font-mono uppercase tracking-wide hover:bg-brand-neon/10 transition-colors;
 }
