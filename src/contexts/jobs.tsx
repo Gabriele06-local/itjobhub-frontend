@@ -139,7 +139,10 @@ export interface JobsState {
   >;
   fetchJobById$: QRL<(id: string) => Promise<JobListing | null>>;
   trackJobInteraction$: QRL<
-    (jobId: string, type: "VIEW" | "APPLY") => Promise<void>
+    (
+      jobId: string,
+      type: "VIEW" | "APPLY",
+    ) => Promise<{ ok: boolean; limitReached: boolean }>
   >;
   fetchJobMatchScore$: QRL<(jobId: string) => Promise<MatchScore | null>>;
   fetchBatchMatchScores$: QRL<
@@ -171,6 +174,7 @@ export interface JobFilters {
   looseSeniority?: boolean;
   salaryMin?: number;
   minMatchScore?: number;
+  personalized?: boolean;
 }
 
 // Helper to process raw API job into JobListing (outside component to avoid QRL serialization issues)
@@ -258,7 +262,7 @@ export const JobsProvider = component$(() => {
     editComment$: $(async () => {}), // Will be assigned below
     fetchTopSkills$: $(async () => []), // Will be assigned below
     fetchJobById$: $(async () => null), // Will be assigned below
-    trackJobInteraction$: $(async () => {}), // Will be assigned below
+    trackJobInteraction$: $(async () => ({ ok: false, limitReached: false })), // Will be assigned below
     fetchJobMatchScore$: $(async () => null), // Will be assigned below
     fetchBatchMatchScores$: $(async () => ({})), // Will be assigned below
     setInitialData$: $(async () => {}), // Will be assigned below
@@ -346,6 +350,8 @@ export const JobsProvider = component$(() => {
           }
           if (filters?.looseSeniority)
             url.searchParams.append("looseSeniority", "true");
+          if (filters?.personalized)
+            url.searchParams.append("personalized", "true");
           if (filters?.salaryMin)
             url.searchParams.append("salary_min", String(filters.salaryMin));
           if (filters?.minMatchScore)
@@ -936,30 +942,29 @@ export const JobsProvider = component$(() => {
 
     jobsState.trackJobInteraction$ = $(
       async (jobId: string, type: "VIEW" | "APPLY") => {
+        const result = { ok: false, limitReached: false };
         try {
           if (typeof window === "undefined" || !jobId || jobId === "undefined")
-            return;
+            return result;
 
           const visitorId = getVisitorId();
           const token = auth.token;
 
-          // Optimistic update first to ensure responsiveness, though duplicates handled by backend
-          // We only increment if we think it's likely impactful, but actually backend deduplication
-          // implies we should rely on backend or just optimistically increment and ignore reverts for simple counters.
           const allInstances = [
             ...jobsState.jobs.filter((j) => j.id === jobId),
             ...jobsState.favorites.filter((j) => j.id === jobId),
           ];
 
-          allInstances.forEach((job) => {
-            if (type === "VIEW") {
+          // VIEW is unlimited — bump optimistically. APPLY must NOT bump until
+          // the server confirms it (the daily limit can reject it with 429;
+          // bumping optimistically is what made the counter "reset" on reload).
+          if (type === "VIEW") {
+            allInstances.forEach((job) => {
               job.views_count = (job.views_count || 0) + 1;
-            } else {
-              job.clicks_count = (job.clicks_count || 0) + 1;
-            }
-          });
+            });
+          }
 
-          await request(`${API_URL}/jobs/${jobId}/track`, {
+          const response = await request(`${API_URL}/jobs/${jobId}/track`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -968,10 +973,36 @@ export const JobsProvider = component$(() => {
             body: JSON.stringify({
               type,
               fingerprint: visitorId,
+              // So the daily apply limit resets at the user's local midnight.
+              tzOffset: String(new Date().getTimezoneOffset()),
             }),
           });
+
+          if (type === "VIEW") {
+            result.ok = response.ok;
+            return result;
+          }
+
+          // APPLY
+          if (response.status === 429) {
+            result.limitReached = true;
+            return result;
+          }
+          if (response.ok) {
+            const body = await response.json().catch(() => null);
+            // already_tracked => data.success === false (no new count)
+            const counted = body?.data?.success !== false;
+            if (counted) {
+              allInstances.forEach((job) => {
+                job.clicks_count = (job.clicks_count || 0) + 1;
+              });
+            }
+            result.ok = true;
+          }
+          return result;
         } catch (error) {
           logger.error({ error, jobId, type }, "Error tracking interaction");
+          return result;
         }
       },
     );

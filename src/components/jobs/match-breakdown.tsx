@@ -10,6 +10,7 @@ interface MatchFactors {
   timeliness: number;
   competition: number;
   applicationRate: number;
+  employmentMatch?: number;
 }
 
 interface MatchBreakdownProps {
@@ -144,6 +145,14 @@ export const MatchBreakdown = component$<MatchBreakdownProps>(
                 {Math.round(factors.applicationRate)}%
               </div>
             </div>
+            {typeof factors.employmentMatch === "number" && (
+              <div class="grid-item">
+                <div class="grid-label">{t("match.employment_type")}</div>
+                <div class="grid-value">
+                  {Math.round(factors.employmentMatch)}%
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

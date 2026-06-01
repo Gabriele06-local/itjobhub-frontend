@@ -10,7 +10,94 @@ import { useTranslate, interpolate } from "~/contexts/i18n";
 import { TagInput } from "~/components/ui/tag-input";
 import { Spinner } from "~/components/ui/spinner";
 import { CvUploadStep } from "~/components/wizard/cv-upload-step";
+import { CANONICAL_VALUES } from "~/lib/enums";
 import styles from "./profile-wizard.css?inline";
+
+/**
+ * Wizard option lists derive their VALUES from the shared enum module (the
+ * backend single source of truth — see ~/lib/enums), while the LABEL and
+ * DESCRIPTION copy stays LOCAL (wizard-specific i18n). Each canonical value is
+ * mapped to its local i18n keys here; values without a mapping are skipped so a
+ * future backend enum addition never crashes the wizard.
+ */
+interface WizardOption {
+  value: string;
+  labelKey: string;
+  descKey: string;
+}
+
+// NOTE: "lead" is a canonical seniority but the wizard profile only models
+// junior/mid/senior (see WizardData["seniority"]). It is intentionally NOT
+// mapped here, so buildWizardOptions skips it and the wizard UX is preserved.
+// The job-search filter (below) does surface every canonical seniority.
+const SENIORITY_I18N: Record<string, Omit<WizardOption, "value">> = {
+  junior: { labelKey: "wizard.junior_label", descKey: "wizard.junior_desc" },
+  mid: { labelKey: "wizard.mid_label", descKey: "wizard.mid_desc" },
+  senior: { labelKey: "wizard.senior_label", descKey: "wizard.senior_desc" },
+};
+
+const WORK_MODE_I18N: Record<string, Omit<WizardOption, "value">> = {
+  remote: { labelKey: "wizard.remote_label", descKey: "wizard.remote_desc" },
+  hybrid: { labelKey: "wizard.hybrid_label", descKey: "wizard.hybrid_desc" },
+  onsite: { labelKey: "wizard.onsite_label", descKey: "wizard.onsite_desc" },
+};
+
+// Availability = employmentType values + the "busy" special case.
+const AVAILABILITY_I18N: Record<string, Omit<WizardOption, "value">> = {
+  "full-time": {
+    labelKey: "wizard.fulltime_label",
+    descKey: "wizard.fulltime_desc",
+  },
+  "part-time": {
+    labelKey: "wizard.parttime_label",
+    descKey: "wizard.parttime_desc",
+  },
+  contract: {
+    labelKey: "wizard.contract_label",
+    descKey: "wizard.contract_desc",
+  },
+  freelance: {
+    labelKey: "wizard.freelance_label",
+    descKey: "wizard.freelance_desc",
+  },
+  internship: {
+    labelKey: "wizard.internship_label",
+    descKey: "wizard.internship_desc",
+  },
+  busy: {
+    labelKey: "wizard.occupied_label",
+    descKey: "wizard.occupied_desc",
+  },
+};
+
+/** Build a wizard option list from a canonical value list + local i18n map. */
+const buildWizardOptions = (
+  values: string[],
+  i18nMap: Record<string, Omit<WizardOption, "value">>,
+): WizardOption[] =>
+  values
+    .filter((value) => value in i18nMap)
+    .map((value) => ({ value, ...i18nMap[value] }));
+
+const SENIORITY_OPTIONS = buildWizardOptions(
+  CANONICAL_VALUES.seniority,
+  SENIORITY_I18N,
+);
+const WORK_MODE_OPTIONS = buildWizardOptions(
+  CANONICAL_VALUES.workMode,
+  WORK_MODE_I18N,
+);
+const AVAILABILITY_OPTIONS = buildWizardOptions(
+  CANONICAL_VALUES.availability,
+  AVAILABILITY_I18N,
+);
+
+/** Live enum value lists (from the backend single source of truth). */
+export interface WizardEnumValues {
+  seniority: string[];
+  workMode: string[];
+  availability: string[];
+}
 
 interface ProfileWizardProps {
   initialData?: Partial<WizardData>;
@@ -18,6 +105,11 @@ interface ProfileWizardProps {
   onCancel$?: QRL<() => void>;
   token?: string;
   showCvStep?: boolean;
+  /**
+   * Value lists from the backend `/enums` endpoint. Optional: when omitted the
+   * canonical fallback values are used, so the wizard never renders empty steps.
+   */
+  enumValues?: WizardEnumValues;
 }
 
 // Language translation keys (will be translated based on user's browser language)
@@ -82,9 +174,21 @@ const SKILL_SUGGESTIONS = [
 ];
 
 export const ProfileWizard = component$<ProfileWizardProps>(
-  ({ initialData, onComplete$, onCancel$, token, showCvStep }) => {
+  ({ initialData, onComplete$, onCancel$, token, showCvStep, enumValues }) => {
     useStylesScoped$(styles);
     const t = useTranslate();
+
+    // Derive option lists: live values from the endpoint when provided,
+    // otherwise the canonical fallback. Label/description copy stays local.
+    const seniorityOptions = enumValues
+      ? buildWizardOptions(enumValues.seniority, SENIORITY_I18N)
+      : SENIORITY_OPTIONS;
+    const workModeOptions = enumValues
+      ? buildWizardOptions(enumValues.workMode, WORK_MODE_I18N)
+      : WORK_MODE_OPTIONS;
+    const availabilityOptions = enumValues
+      ? buildWizardOptions(enumValues.availability, AVAILABILITY_I18N)
+      : AVAILABILITY_OPTIONS;
 
     const hasCvStep = showCvStep !== false;
     const firstStep = hasCvStep ? 0 : 1;
@@ -98,7 +202,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
         languages: initialData?.languages || [],
         skills: initialData?.skills || [],
         seniority: initialData?.seniority || "",
-        availability: initialData?.availability || "",
+        availability: initialData?.availability || [],
         workModes: initialData?.workModes || [],
         salaryMin: initialData?.salaryMin ?? 0,
         portfolioUrl: initialData?.portfolioUrl || "",
@@ -132,8 +236,8 @@ export const ProfileWizard = component$<ProfileWizardProps>(
       if (extracted.seniority && !state.data.seniority) {
         state.data.seniority = extracted.seniority;
       }
-      if (extracted.availability && !state.data.availability) {
-        state.data.availability = extracted.availability;
+      if (extracted.availability && state.data.availability.length === 0) {
+        state.data.availability = [extracted.availability];
       }
       if (extracted.workModes.length > 0 && state.data.workModes.length === 0) {
         state.data.workModes = [...extracted.workModes];
@@ -158,7 +262,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
           case 4:
             return state.data.workModes.length > 0;
           case 5:
-            return state.data.availability !== "";
+            return state.data.availability.length > 0;
           case 6:
             return state.data.salaryMin >= 0;
           default:
@@ -175,7 +279,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
           case 4:
             return state.data.workModes.length > 0;
           case 5:
-            return state.data.availability !== "";
+            return state.data.availability.length > 0;
           case 6:
             return state.data.salaryMin >= 0;
           default:
@@ -272,24 +376,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                 <h2 class="step-heading">{t("wizard.seniority_step")}</h2>
                 <p class="step-description">{t("wizard.seniority_desc")}</p>
                 <div class="options-stack">
-                  {[
-                    // ... options unchanged ...
-                    {
-                      value: "junior",
-                      labelKey: "wizard.junior_label",
-                      descKey: "wizard.junior_desc",
-                    },
-                    {
-                      value: "mid",
-                      labelKey: "wizard.mid_label",
-                      descKey: "wizard.mid_desc",
-                    },
-                    {
-                      value: "senior",
-                      labelKey: "wizard.senior_label",
-                      descKey: "wizard.senior_desc",
-                    },
-                  ].map((option) => (
+                  {seniorityOptions.map((option) => (
                     <label
                       key={option.value}
                       for={`seniority-${option.value}`}
@@ -329,23 +416,7 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                 <h2 class="step-heading">{t("wizard.work_modes_step")}</h2>
                 <p class="step-description">{t("wizard.work_modes_desc")}</p>
                 <div class="options-stack">
-                  {[
-                    {
-                      value: "remote",
-                      labelKey: "wizard.remote_label",
-                      descKey: "wizard.remote_desc",
-                    },
-                    {
-                      value: "hybrid",
-                      labelKey: "wizard.hybrid_label",
-                      descKey: "wizard.hybrid_desc",
-                    },
-                    {
-                      value: "onsite",
-                      labelKey: "wizard.onsite_label",
-                      descKey: "wizard.onsite_desc",
-                    },
-                  ].map((option) => (
+                  {workModeOptions.map((option) => (
                     <label
                       key={option.value}
                       for={`workMode-${option.value}`}
@@ -393,29 +464,12 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                 <h2 class="step-heading">{t("wizard.availability_step")}</h2>
                 <p class="step-description">{t("wizard.availability_desc")}</p>
                 <div class="options-stack">
-                  {[
-                    // ... options unchanged ...
-                    {
-                      value: "full-time",
-                      labelKey: "wizard.fulltime_label",
-                      descKey: "wizard.fulltime_desc",
-                    },
-                    {
-                      value: "part-time",
-                      labelKey: "wizard.parttime_label",
-                      descKey: "wizard.parttime_desc",
-                    },
-                    {
-                      value: "busy",
-                      labelKey: "wizard.occupied_label",
-                      descKey: "wizard.occupied_desc",
-                    },
-                  ].map((option) => (
+                  {availabilityOptions.map((option) => (
                     <label
                       key={option.value}
                       for={`availability-${option.value}`}
                       class={`option-card ${
-                        state.data.availability === option.value
+                        state.data.availability.includes(option.value)
                           ? "option-card-selected"
                           : "option-card-default"
                       }`}
@@ -423,14 +477,16 @@ export const ProfileWizard = component$<ProfileWizardProps>(
                       <input
                         id={`availability-${option.value}`}
                         aria-label={t(option.labelKey)}
-                        type="radio"
+                        type="checkbox"
                         name="availability"
                         value={option.value}
-                        checked={state.data.availability === option.value}
-                        onChange$={() =>
-                          (state.data.availability =
-                            option.value as WizardData["availability"])
-                        }
+                        checked={state.data.availability.includes(option.value)}
+                        onChange$={() => {
+                          const set = new Set(state.data.availability);
+                          if (set.has(option.value)) set.delete(option.value);
+                          else set.add(option.value);
+                          state.data.availability = Array.from(set);
+                        }}
                         class="option-input"
                       />
                       <div class="option-content">

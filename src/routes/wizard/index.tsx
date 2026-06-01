@@ -5,6 +5,7 @@ import { useAuth } from "~/contexts/auth";
 import { ProfileWizard } from "~/components/wizard/profile-wizard";
 import type { WizardData } from "~/contexts/auth";
 import { type SupportedLanguage } from "~/contexts/i18n";
+import { fetchEnums } from "~/lib/enums";
 
 // Import translations for server-side DocumentHead
 import it from "~/locales/it.json";
@@ -28,9 +29,23 @@ export const useWizardHeadLoader = routeLoader$(({ cookie }) => {
   };
 });
 
+// Load the categorical value lists from the backend single source of truth.
+export const useWizardEnumsLoader = routeLoader$(async ({ cookie }) => {
+  const savedLang =
+    (cookie.get("preferred-language")?.value as SupportedLanguage) || "it";
+  const lang = savedLang in translations ? savedLang : "it";
+  const enums = await fetchEnums(lang);
+  return {
+    seniority: enums.seniority.map((o) => o.value),
+    workMode: enums.workMode.map((o) => o.value),
+    availability: enums.availability.map((o) => o.value),
+  };
+});
+
 export default component$(() => {
   const auth = useAuth();
   const nav = useNavigate();
+  const enumsLoader = useWizardEnumsLoader();
 
   // Use useTask$ for redirection
   useTask$(({ track }) => {
@@ -67,9 +82,7 @@ export default component$(() => {
     languages: auth.user?.languages || [],
     skills: auth.user?.skills || [],
     seniority: (auth.user?.seniority as "junior" | "mid" | "senior" | "") || "",
-    availability:
-      (auth.user?.availability as "full-time" | "part-time" | "busy" | "") ||
-      "",
+    availability: auth.user?.availability || [],
     workModes: auth.user?.workModes || [],
     salaryMin: auth.user?.salaryMin || 0,
     portfolioUrl: auth.user?.portfolioUrl || "",
@@ -83,6 +96,7 @@ export default component$(() => {
         onCancel$={handleCancel}
         token={auth.token || undefined}
         showCvStep={true}
+        enumValues={enumsLoader.value}
       />
     </div>
   );

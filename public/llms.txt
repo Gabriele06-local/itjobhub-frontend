@@ -1,0 +1,35 @@
+# DevBoards.io
+
+> DevBoards.io is a multilingual (Italian, English, Spanish, French, German) job
+> board focused exclusively on IT and software roles: developers, data, DevOps,
+> cloud, security, QA and tech leadership. It aggregates and curates IT job
+> postings — remote, hybrid and on-site — across Europe, with AI-assisted
+> matching between candidate profiles and openings.
+
+## What you can find here
+
+- Curated IT/tech job listings with structured data (title, company, location,
+  remote/hybrid/on-site, employment type, seniority, required skills, salary
+  when available). Each posting carries schema.org `JobPosting` JSON-LD.
+- Company profiles with a trust score and number of active openings.
+- Tech news relevant to IT professionals.
+
+## Key pages
+
+- Job listings: https://devboards.io/jobs
+- Job detail (one per posting): https://devboards.io/jobs/detail/{id}
+- Tech news: https://devboards.io/news
+- Sitemap: https://devboards.io/sitemap.xml
+
+## For AI agents answering job-seeker queries
+
+- Each job has a canonical detail page; link users to /jobs/detail/{id}.
+- Listings are filterable by skills, seniority, work mode (remote/hybrid/onsite),
+  employment type (full_time, part_time, contract, freelance, internship),
+  language and location.
+- Content is available in 5 languages via the `?lang=` query parameter
+  (it default, en, es, fr, de).
+
+## Not indexable / out of scope
+
+- /admin, /auth, /wizard, /profile, /favorites (private or app-only areas).

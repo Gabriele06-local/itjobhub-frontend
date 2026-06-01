@@ -8,7 +8,12 @@ import {
   useSignal,
 } from "@builder.io/qwik";
 import { isServer } from "@builder.io/qwik/build";
-import { routeLoader$, Link, useNavigate } from "@builder.io/qwik-city";
+import {
+  routeLoader$,
+  Link,
+  useNavigate,
+  type DocumentHead,
+} from "@builder.io/qwik-city";
 
 import logger from "~/utils/logger";
 import { useJobs, processApiJob } from "~/contexts/jobs";
@@ -75,7 +80,30 @@ export const useJobLoader = routeLoader$(async ({ params, cookie, status }) => {
         }
       }
 
-      return { job, matchScore };
+      // Daily application quota (authenticated only) — lets us disable the
+      // Apply button preventively once the user hits the per-day limit.
+      let applyQuota: {
+        todayCount: number;
+        limit: number;
+        remaining: number;
+      } | null = null;
+      if (tokenCookie?.value) {
+        try {
+          const quotaRes = await fetch(`${API_URL}/jobs/me/apply-quota`, {
+            headers,
+          });
+          if (quotaRes.ok) {
+            const quotaResult = await quotaRes.json();
+            if (quotaResult.success) {
+              applyQuota = quotaResult.data;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch apply quota in loader", e);
+        }
+      }
+
+      return { job, matchScore, applyQuota };
     }
 
     return null;
@@ -85,6 +113,34 @@ export const useJobLoader = routeLoader$(async ({ params, cookie, status }) => {
     return null;
   }
 });
+
+// Per-job SEO: dynamic <title>/description so each posting ranks on its own
+// (the RouterHead derives canonical + og/twitter from these). Previously the
+// detail page had no head() and inherited the generic site title.
+export const head: DocumentHead = ({ resolveValue }) => {
+  const data = resolveValue(useJobLoader);
+  const job = data?.job;
+  if (!job) {
+    return { title: "DevBoards.io" };
+  }
+  const plain = (job.description || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const where = job.remote ? "Remote" : job.location || "";
+  const context = [job.company, where].filter(Boolean).join(" · ");
+  const description = (plain ? plain.slice(0, 155) : context).trim();
+  const title = `${job.title}${job.company ? ` - ${job.company}` : ""} | DevBoards.io`;
+  const meta: { name?: string; property?: string; content: string }[] = [
+    { name: "description", content: description },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+  ];
+  if (job.companyLogo) {
+    meta.push({ property: "og:image", content: job.companyLogo });
+  }
+  return { title, meta };
+};
 
 export default component$(() => {
   useStylesScoped$(styles);
@@ -100,6 +156,13 @@ export default component$(() => {
     job: jobSignal.value?.job || null,
     matchScore: jobSignal.value?.matchScore || null,
     isDeleting: false,
+    // null => unknown/anonymous (no per-day limit). Number => applications left today.
+    applyRemaining:
+      (jobSignal.value as { applyQuota?: { remaining: number } } | null)
+        ?.applyQuota?.remaining ?? null,
+    applyLimit:
+      (jobSignal.value as { applyQuota?: { limit: number } } | null)?.applyQuota
+        ?.limit ?? 3,
   });
 
   const showDeleteModal = useSignal(false);
@@ -165,11 +228,18 @@ export default component$(() => {
     }
   });
 
-  const handleApplyClick = $(() => {
-    if (state.job) {
-      jobsContext.trackJobInteraction$(state.job.id, "APPLY");
-      // Optimistic local update
+  const handleApplyClick = $(async () => {
+    if (!state.job) return;
+    const res = await jobsContext.trackJobInteraction$(state.job.id, "APPLY");
+    if (res.limitReached) {
+      // Server rejected it (429): mark the quota exhausted so the button
+      // disables and the message shows. Do NOT bump the counter.
+      state.applyRemaining = 0;
+    } else if (res.ok) {
       state.job.clicks_count = (state.job.clicks_count || 0) + 1;
+      if (state.applyRemaining !== null && state.applyRemaining > 0) {
+        state.applyRemaining = state.applyRemaining - 1;
+      }
     }
   });
 
@@ -186,7 +256,7 @@ export default component$(() => {
       languages: auth.user.languages || [],
       skills: newSkills,
       seniority: auth.user.seniority || "",
-      availability: auth.user.availability || "",
+      availability: auth.user.availability || [],
       workModes: auth.user.workModes || [],
       salaryMin: auth.user.salaryMin || 0,
     };
@@ -255,6 +325,10 @@ export default component$(() => {
           onReactionComplete$={handleReactionComplete}
           onDeleteJob$={handleDeleteJob}
           onAddSkill$={handleAddSkill}
+          applyDisabled={
+            state.applyRemaining !== null && state.applyRemaining <= 0
+          }
+          applyLimit={state.applyLimit}
         />
       )}
     </div>

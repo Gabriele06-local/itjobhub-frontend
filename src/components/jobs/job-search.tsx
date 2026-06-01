@@ -1,7 +1,63 @@
 import { component$, $, useStore, type QRL } from "@builder.io/qwik";
 import { useTranslate } from "~/contexts/i18n";
+import { CANONICAL_VALUES } from "~/lib/enums";
 
 import { LocationAutocomplete } from "../ui/location-autocomplete";
+
+/**
+ * Option lists for the job-search filters derive their VALUES from the shared
+ * enum module (backend single source of truth — see ~/lib/enums). Labels are
+ * resolved through the existing local `jobs.*` i18n keys, keyed by canonical
+ * value. The workMode select uses the canonical "onsite" value; the legacy
+ * "office" <-> "onsite" reconciliation happens at the route boundary
+ * (jobs/index.tsx handleSearch, via workModeToLegacy/FromLegacy).
+ */
+interface FilterOption {
+  value: string;
+  labelKey: string;
+}
+
+const SENIORITY_LABEL_KEYS: Record<string, string> = {
+  junior: "jobs.junior",
+  mid: "jobs.mid",
+  senior: "jobs.senior",
+  lead: "jobs.lead",
+};
+
+const EMPLOYMENT_LABEL_KEYS: Record<string, string> = {
+  "full-time": "jobs.full_time",
+  "part-time": "jobs.part_time",
+  contract: "jobs.contract",
+  freelance: "jobs.freelance",
+  internship: "jobs.internship",
+};
+
+const WORK_MODE_LABEL_KEYS: Record<string, string> = {
+  remote: "jobs.remote",
+  hybrid: "jobs.hybrid",
+  onsite: "jobs.onsite",
+};
+
+const buildOptions = (
+  values: string[],
+  labelKeys: Record<string, string>,
+): FilterOption[] =>
+  values
+    .filter((value) => value in labelKeys)
+    .map((value) => ({ value, labelKey: labelKeys[value] }));
+
+const SENIORITY_OPTIONS = buildOptions(
+  CANONICAL_VALUES.seniority,
+  SENIORITY_LABEL_KEYS,
+);
+const EMPLOYMENT_OPTIONS = buildOptions(
+  CANONICAL_VALUES.employmentType,
+  EMPLOYMENT_LABEL_KEYS,
+);
+const WORK_MODE_OPTIONS = buildOptions(
+  CANONICAL_VALUES.workMode,
+  WORK_MODE_LABEL_KEYS,
+);
 
 interface JobSearchFilters {
   query: string;
@@ -13,6 +69,13 @@ interface JobSearchFilters {
   dateRange: string;
   salaryMin: string;
   minMatchScore: string;
+}
+
+/** Live enum value lists (from the backend single source of truth). */
+export interface JobSearchEnumValues {
+  seniority: string[];
+  employmentType: string[];
+  workMode: string[];
 }
 
 interface JobSearchProps {
@@ -27,6 +90,11 @@ interface JobSearchProps {
   initialSalaryMin?: string;
   initialMinMatchScore?: string;
   isAuthenticated?: boolean;
+  /**
+   * Value lists from the backend `/enums` endpoint. Optional: when omitted the
+   * canonical fallback values are used, so the selects never render empty.
+   */
+  enumValues?: JobSearchEnumValues;
 }
 
 export const JobSearch = component$<JobSearchProps>(
@@ -42,8 +110,21 @@ export const JobSearch = component$<JobSearchProps>(
     initialSalaryMin,
     initialMinMatchScore,
     isAuthenticated = false,
+    enumValues,
   }) => {
     const t = useTranslate();
+
+    // Derive option lists: live values from the endpoint when provided,
+    // otherwise the canonical fallback. Labels resolve through local i18n.
+    const seniorityOptions = enumValues
+      ? buildOptions(enumValues.seniority, SENIORITY_LABEL_KEYS)
+      : SENIORITY_OPTIONS;
+    const employmentOptions = enumValues
+      ? buildOptions(enumValues.employmentType, EMPLOYMENT_LABEL_KEYS)
+      : EMPLOYMENT_OPTIONS;
+    const workModeOptions = enumValues
+      ? buildOptions(enumValues.workMode, WORK_MODE_LABEL_KEYS)
+      : WORK_MODE_OPTIONS;
     const state = useStore<JobSearchFilters>({
       query: initialQuery || "",
       seniority: initialSeniority || "",
@@ -208,9 +289,11 @@ export const JobSearch = component$<JobSearchProps>(
               aria-label={t("jobs.seniority_label")}
             >
               <option value="">{t("jobs.all_levels")}</option>
-              <option value="junior">{t("jobs.junior")}</option>
-              <option value="mid">{t("jobs.mid")}</option>
-              <option value="senior">{t("jobs.senior")}</option>
+              {seniorityOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -230,11 +313,11 @@ export const JobSearch = component$<JobSearchProps>(
               aria-label={t("jobs.work_type_label")}
             >
               <option value="">{t("jobs.all_types")}</option>
-              <option value="full-time">{t("jobs.full_time")}</option>
-              <option value="part-time">{t("jobs.part_time")}</option>
-              <option value="contract">{t("jobs.contract")}</option>
-              <option value="freelance">{t("jobs.freelance")}</option>
-              <option value="internship">{t("jobs.internship")}</option>
+              {employmentOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -254,9 +337,11 @@ export const JobSearch = component$<JobSearchProps>(
               aria-label={t("jobs.mode_label")}
             >
               <option value="">{t("jobs.all_modes")}</option>
-              <option value="remote">{t("jobs.remote")}</option>
-              <option value="hybrid">{t("jobs.hybrid")}</option>
-              <option value="office">{t("jobs.office")}</option>
+              {workModeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -422,7 +507,7 @@ export const JobSearch = component$<JobSearchProps>(
                     ? t("jobs.remote")
                     : state.remote === "hybrid"
                       ? t("jobs.hybrid")
-                      : t("jobs.office")}
+                      : t("jobs.onsite")}
                 </span>
               )}
 

@@ -30,6 +30,11 @@ export const CTASection = component$<CTASectionProps>(({ isAuthenticated }) => {
             </a>
           </div>
         )}
+        <div class="actions">
+          <a href="/contact" class="btn-login">
+            {t("home.contact_cta")}
+          </a>
+        </div>
       </div>
     </section>
   );

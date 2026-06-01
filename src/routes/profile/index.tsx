@@ -230,9 +230,9 @@ export default component$(() => {
       seniority: (extracted.seniority ||
         u?.seniority ||
         "") as WizardData["seniority"],
-      availability: (extracted.availability ||
-        u?.availability ||
-        "") as WizardData["availability"],
+      availability: extracted.availability
+        ? [extracted.availability]
+        : u?.availability || [],
       workModes:
         extracted.workModes.length > 0
           ? extracted.workModes
@@ -349,9 +349,7 @@ export default component$(() => {
       skills: auth.user?.skills || [],
       seniority:
         (auth.user?.seniority as "junior" | "mid" | "senior" | "") || "",
-      availability:
-        (auth.user?.availability as "full-time" | "part-time" | "busy" | "") ||
-        "",
+      availability: auth.user?.availability || [],
       workModes: auth.user?.workModes || [],
       salaryMin: auth.user?.salaryMin || 0,
       portfolioUrl: auth.user?.portfolioUrl || "",
@@ -367,17 +365,20 @@ export default component$(() => {
     );
   }
 
-  const formatAvailability = $((availability: string) => {
-    switch (availability) {
-      case "full-time":
-        return translate("jobs.full_time", lang);
-      case "part-time":
-        return translate("jobs.part_time", lang);
-      case "busy":
-        return translate("profile.occupied", lang);
-      default:
-        return availability;
-    }
+  const formatAvailability = $((availability: string[]) => {
+    const labelOf = (value: string) => {
+      switch (value) {
+        case "full-time":
+          return translate("jobs.full_time", lang);
+        case "part-time":
+          return translate("jobs.part_time", lang);
+        case "busy":
+          return translate("profile.occupied", lang);
+        default:
+          return value;
+      }
+    };
+    return (availability || []).map(labelOf).join(", ");
   });
 
   const formatSeniority = $((seniority: string) => {
@@ -826,7 +827,7 @@ export default component$(() => {
                       <div class="flex items-center">
                         <div class="bg-green-500 dark:bg-green-400 mr-3 rounded-full w-3 h-3"></div>
                         <span class="font-medium text-gray-900 dark:text-white text-sm capitalize">
-                          {formatAvailability(auth.user?.availability || "")}
+                          {formatAvailability(auth.user?.availability || [])}
                         </span>
                       </div>
                     </div>

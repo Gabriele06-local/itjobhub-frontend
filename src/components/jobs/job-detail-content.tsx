@@ -32,6 +32,9 @@ interface JobDetailContentProps {
   onAddSkill$: PropFunction<(skill: string) => Promise<void>>;
   isDeleting: boolean;
   showDeleteModal: Signal<boolean>;
+  /** Daily apply limit reached — disable the Apply button with a message. */
+  applyDisabled?: boolean;
+  applyLimit?: number;
 }
 
 export const JobDetailContent = component$<JobDetailContentProps>((props) => {
@@ -90,6 +93,8 @@ export const JobDetailContent = component$<JobDetailContentProps>((props) => {
           onToggleFavorite$={props.onToggleFavorite$}
           onApplyClick$={props.onApplyClick$}
           onReactionComplete$={props.onReactionComplete$}
+          applyDisabled={props.applyDisabled}
+          applyLimit={props.applyLimit}
         />
         <div class="px-8 md:px-10 pb-8">
           {auth.user?.role === "admin" && (

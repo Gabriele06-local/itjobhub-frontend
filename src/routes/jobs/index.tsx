@@ -15,6 +15,7 @@ import { ScrollButtons } from "~/components/ui/scroll-buttons";
 import type { JobFilters, JobListing, ApiPagination } from "~/contexts/jobs";
 import { ItemListSchema, BreadcrumbSchema } from "~/components/seo/json-ld";
 import { SITE_URL } from "~/constants";
+import { workModeFromLegacy, fetchEnums } from "~/lib/enums";
 import logger from "~/utils/logger";
 
 // Import translations for server-side DocumentHead
@@ -36,6 +37,20 @@ export const useJobsHeadLoader = routeLoader$(({ cookie }) => {
     description:
       t["meta.jobs_description"] ||
       "Scopri le migliori opportunità di lavoro nel settore IT.",
+  };
+});
+
+// Load the categorical value lists from the backend single source of truth.
+// Labels are localized client-side via i18n, so we only pass the value lists.
+export const useEnumsLoader = routeLoader$(async ({ cookie }) => {
+  const savedLang =
+    (cookie.get("preferred-language")?.value as SupportedLanguage) || "it";
+  const lang = savedLang in translations ? savedLang : "it";
+  const enums = await fetchEnums(lang);
+  return {
+    seniority: enums.seniority.map((o) => o.value),
+    employmentType: enums.employmentType.map((o) => o.value),
+    workMode: enums.workMode.map((o) => o.value),
   };
 });
 
@@ -63,6 +78,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
   const location = url.searchParams.get("location") || "";
   const dateRange = url.searchParams.get("dateRange") || "";
   const minMatchScore = url.searchParams.get("minMatchScore") || "";
+  const personalized = url.searchParams.get("personalized") || "";
   const lat = url.searchParams.get("lat") || "";
   const lng = url.searchParams.get("lng") || "";
   const page = 1;
@@ -96,6 +112,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
   if (dateRange) endpoint.searchParams.append("dateRange", dateRange);
   if (minMatchScore)
     endpoint.searchParams.append("minMatchScore", minMatchScore);
+  if (personalized) endpoint.searchParams.append("personalized", personalized);
   if (lat) endpoint.searchParams.append("lat", lat);
   if (lng) endpoint.searchParams.append("lng", lng);
   if (lat && lng) endpoint.searchParams.append("radius_km", "50");
@@ -130,6 +147,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
         availability,
         location,
         dateRange,
+        personalized: personalized === "true",
         minMatchScore: minMatchScore ? Number(minMatchScore) : undefined,
         lat: lat ? Number(lat) : undefined,
         lng: lng ? Number(lng) : undefined,
@@ -151,6 +169,7 @@ export default component$(() => {
   const t = useTranslate();
   const loc = useLocation();
   const jobsLoader = useJobsListLoader();
+  const enumsLoader = useEnumsLoader();
   const jobsState = useJobs();
 
   // Parse search state from URL for initial component state
@@ -353,7 +372,9 @@ export default component$(() => {
         "internship",
         "hybrid",
       ];
-      const userAvailability = auth.user.availability
+      // availability is now multi-select; the backend employment_type filter
+      // takes a single value, so use the first selected type for the feed.
+      const userAvailability = auth.user.availability?.[0]
         ?.toLowerCase()
         .replace("_", "-");
 
@@ -369,6 +390,9 @@ export default component$(() => {
       if (userAvailability && validEmploymentTypes.includes(userAvailability))
         url.searchParams.set("availability", userAvailability);
       url.searchParams.set("looseSeniority", "true");
+      // Server-side personalized ranking: keep only jobs with >=50% of the
+      // job's required skills owned AND overall compatibility >=60%.
+      url.searchParams.set("personalized", "true");
     } else {
       // Reset to all jobs but keep language filter if applicable
       url.searchParams.delete("skills");
@@ -376,6 +400,7 @@ export default component$(() => {
       url.searchParams.delete("seniority");
       url.searchParams.delete("availability");
       url.searchParams.delete("looseSeniority");
+      url.searchParams.delete("personalized");
     }
     nav(url.pathname + url.search);
   });
@@ -433,12 +458,15 @@ export default component$(() => {
       url.searchParams.delete("lng");
     }
 
-    // Map remote selection to API filters
-    if (filters.remote === "remote") {
+    // Map workMode selection to API filters. The select now emits the canonical
+    // "onsite" value; we accept legacy "office" too for back-compat (bookmarked
+    // URLs / older clients) by normalizing through workModeFromLegacy.
+    const workMode = workModeFromLegacy(filters.remote);
+    if (workMode === "remote") {
       url.searchParams.set("remote", "true");
-    } else if (filters.remote === "office") {
+    } else if (workMode === "onsite") {
       url.searchParams.set("remote", "false");
-    } else if (filters.remote === "hybrid") {
+    } else if (workMode === "hybrid") {
       url.searchParams.set("remote", "hybrid");
     } else {
       url.searchParams.delete("remote");
@@ -492,12 +520,11 @@ export default component$(() => {
         <JobSearch
           onSearch$={handleSearch}
           initialLocation={
-            initialLocation || (
-              auth.user?.workModes?.length === 1 &&
-              auth.user?.workModes[0] === "remote"
-                ? undefined
-                : auth.user?.location || undefined
-            )
+            initialLocation ||
+            (auth.user?.workModes?.length === 1 &&
+            auth.user?.workModes[0] === "remote"
+              ? undefined
+              : auth.user?.location || undefined)
           }
           initialGeo={
             auth.user?.workModes?.length === 1 &&
@@ -518,7 +545,7 @@ export default component$(() => {
             initialRemote === "true"
               ? "remote"
               : initialRemote === "false"
-                ? "office"
+                ? "onsite"
                 : initialRemote === "hybrid"
                   ? "hybrid"
                   : ""
@@ -527,6 +554,7 @@ export default component$(() => {
           initialDateRange={initialDateRange}
           initialMinMatchScore={initialMinMatchScore}
           isAuthenticated={auth.isAuthenticated}
+          enumValues={enumsLoader.value}
         />
 
         {/* Filter toggle for authenticated users */}

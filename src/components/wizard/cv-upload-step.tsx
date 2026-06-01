@@ -7,7 +7,11 @@ import {
   type QRL,
   useStylesScoped$,
 } from "@builder.io/qwik";
-import { useTranslate, I18nContext, type SupportedLanguage } from "~/contexts/i18n";
+import {
+  useTranslate,
+  I18nContext,
+  type SupportedLanguage,
+} from "~/contexts/i18n";
 import type { CvRecord, ExtractedProfile } from "~/contexts/auth";
 import { uploadCV, deleteCV, parseCV } from "~/utils/cv-api";
 import { Spinner } from "~/components/ui/spinner";
@@ -151,7 +155,9 @@ export const CvUploadStep = component$<CvUploadStepProps>((props) => {
           }
         } catch (err) {
           state.parseError =
-            (err as { status?: number })?.status === 429 ? errRateLimit : errParse;
+            (err as { status?: number })?.status === 429
+              ? errRateLimit
+              : errParse;
         } finally {
           state.isParsing = false;
         }
