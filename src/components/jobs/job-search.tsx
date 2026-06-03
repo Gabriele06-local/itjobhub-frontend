@@ -90,10 +90,7 @@ interface JobSearchProps {
   initialSalaryMin?: string;
   initialMinMatchScore?: string;
   isAuthenticated?: boolean;
-  /**
-   * Value lists from the backend `/enums` endpoint. Optional: when omitted the
-   * canonical fallback values are used, so the selects never render empty.
-   */
+  isLoading?: boolean;
   enumValues?: JobSearchEnumValues;
 }
 
@@ -110,6 +107,7 @@ export const JobSearch = component$<JobSearchProps>(
     initialSalaryMin,
     initialMinMatchScore,
     isAuthenticated = false,
+    isLoading = false,
     enumValues,
   }) => {
     const t = useTranslate();
@@ -426,9 +424,20 @@ export const JobSearch = component$<JobSearchProps>(
             <button
               onClick$={handleSearch}
               data-testid="search-submit"
-              class="flex-1 btn-primary"
+              class={"flex-1 btn-primary" + (isLoading ? " opacity-60 cursor-not-allowed" : "")}
+              disabled={isLoading}
             >
-              {t("jobs.search_btn")}
+              {isLoading ? (
+                <span class="flex items-center gap-2">
+                  <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  {t("jobs.searching")}
+                </span>
+              ) : (
+                t("jobs.search_btn")
+              )}
             </button>
 
             {hasFilters && (

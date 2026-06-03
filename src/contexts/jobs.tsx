@@ -165,6 +165,7 @@ export interface JobFilters {
   seniority?: string;
   availability?: string;
   remote?: boolean;
+  employmentType?: string;
   query?: string;
   dateRange?: string;
   location_geo?: { lat: number; lng: number };
@@ -336,6 +337,8 @@ export const JobsProvider = component$(() => {
           }
           if (filters?.remote !== undefined)
             url.searchParams.append("remote", String(filters.remote));
+          if (filters?.employmentType)
+            url.searchParams.append("employment_type", filters.employmentType);
           if (filters?.languages?.length)
             url.searchParams.append("languages", filters.languages.join(","));
           if (filters?.skills?.length)

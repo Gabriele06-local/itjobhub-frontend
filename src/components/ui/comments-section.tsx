@@ -75,7 +75,6 @@ export const UnifiedCommentsSection = component$<CommentsSectionProps>(
         return count;
       };
       state.totalCount = countRecursive(state.comments);
-      console.log("Updated total count in state:", state.totalCount);
     });
 
     // --- LOADING LOGIC ---

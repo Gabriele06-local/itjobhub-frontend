@@ -67,11 +67,8 @@ export const AvatarCropper = component$((props: AvatarCropperProps) => {
             toggleDragModeOnDblclick: false,
             minCropBoxWidth: 256,
             minCropBoxHeight: 256,
-            ready() {
-              console.log("AvatarCropper: Cropper is ready");
-            },
+            ready() {},
           });
-          console.log("AvatarCropper: Created instance:", cropper);
           cropperRef.value = noSerialize(cropper);
         } catch (e) {
           console.error("AvatarCropper: Error initializing cropper", e);

@@ -137,6 +137,7 @@ export const useJobsListLoader = routeLoader$(async ({ url, env, cookie }) => {
         : { page: 1, total: 0, pages: 0 },
       filters: {
         query,
+        employmentType: remote === "hybrid" ? "hybrid" : undefined,
         remote:
           remote === "true" ? true : remote === "false" ? false : undefined,
         salaryMin: salaryMin ? Number(salaryMin) : undefined,
@@ -187,7 +188,12 @@ export default component$(() => {
   const hasInitialSearch = !!(
     initialQuery ||
     initialRemote ||
-    initialSalaryMinFromUrl
+    initialSeniority ||
+    initialAvailability ||
+    initialLocation ||
+    initialSalaryMinFromUrl ||
+    initialDateRange ||
+    initialMinMatchScore
   );
 
   const matchScores = useSignal<
@@ -216,14 +222,20 @@ export default component$(() => {
     showPersonalized: hasPersonalizedParams, // Sync with URL params
     searchFilters: hasInitialSearch
       ? ({
-          query: initialQuery,
+          query: initialQuery || undefined,
           remote:
             initialRemote === "true"
               ? true
               : initialRemote === "false"
                 ? false
                 : undefined,
+          employmentType: initialRemote === "hybrid" ? "hybrid" : undefined,
+          seniority: initialSeniority || undefined,
+          availability: initialAvailability || undefined,
+          location: initialLocation || undefined,
+          dateRange: initialDateRange || undefined,
           salaryMin: initialSalaryMin ? Number(initialSalaryMin) : undefined,
+          minMatchScore: initialMinMatchScore ? Number(initialMinMatchScore) : undefined,
         } as JobFilters)
       : null,
     hasSearched: hasInitialSearch,
@@ -553,6 +565,7 @@ export default component$(() => {
           initialSalaryMin={initialSalaryMin}
           initialDateRange={initialDateRange}
           initialMinMatchScore={initialMinMatchScore}
+          isLoading={state.isLoading}
           isAuthenticated={auth.isAuthenticated}
           enumValues={enumsLoader.value}
         />

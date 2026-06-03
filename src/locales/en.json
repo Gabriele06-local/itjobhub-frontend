@@ -75,6 +75,7 @@
   "jobs.work_type_label": "Work type",
   "jobs.mode_label": "Mode",
   "jobs.search_btn": "Search",
+  "jobs.searching": "Searching...",
   "jobs.all_dates": "All dates",
   "jobs.today": "Today",
   "jobs.week": "Last week",
