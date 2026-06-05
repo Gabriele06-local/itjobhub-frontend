@@ -55,6 +55,10 @@ export const Navigation = component$(() => {
     state.isMenuOpen = !state.isMenuOpen;
   });
 
+  const closeMenu = $(() => {
+    state.isMenuOpen = false;
+  });
+
   const selectLanguage = $((lang: SupportedLanguage) => {
     // Persists the cookie and re-renders via SSR — see setLanguage's doc.
     state.showLanguageDropdown = false;
@@ -320,12 +324,14 @@ export const Navigation = component$(() => {
           <div class="mobile-menu-panel">
             <Link
               href="/jobs"
+              onClick$={closeMenu}
               class={`mobile-nav-link ${location.url.pathname.startsWith("/jobs") ? "active" : ""}`}
             >
               {t("nav.jobs")}
             </Link>
             <Link
               href="/news"
+              onClick$={closeMenu}
               class={`mobile-nav-link ${location.url.pathname.startsWith("/news") ? "active" : ""}`}
             >
               {t("nav.news")}
@@ -333,6 +339,7 @@ export const Navigation = component$(() => {
             {auth.user?.role === "admin" && (
               <Link
                 href="/admin/stats"
+                onClick$={closeMenu}
                 class={`mobile-nav-link ${location.url.pathname.startsWith("/admin") ? "active" : ""}`}
               >
                 {t("nav.dashboard")}
@@ -341,6 +348,7 @@ export const Navigation = component$(() => {
             {auth.isAuthenticated && (
               <Link
                 href="/favorites"
+                onClick$={closeMenu}
                 class={`mobile-nav-link ${location.url.pathname.startsWith("/favorites") ? "active" : ""}`}
               >
                 {t("nav.favorites")}
@@ -352,12 +360,14 @@ export const Navigation = component$(() => {
                 <div class="mobile-auth-wrapper">
                   <Link
                     href="/profile"
+                    onClick$={closeMenu}
                     class={`mobile-nav-link ${location.url.pathname.startsWith("/profile") ? "active" : ""}`}
                   >
                     {t("nav.profile")}
                   </Link>
                   <Link
                     href="/user/messages"
+                    onClick$={closeMenu}
                     class={`mobile-nav-link ${location.url.pathname.startsWith("/user/messages") ? "active" : ""}`}
                   >
                     {t("nav.messages")}
@@ -374,12 +384,14 @@ export const Navigation = component$(() => {
                 <div class="mobile-auth-wrapper">
                   <Link
                     href="/login"
+                    onClick$={closeMenu}
                     class={`mobile-nav-link ${location.url.pathname.startsWith("/login") ? "active" : ""}`}
                   >
                     {t("nav.login")}
                   </Link>
                   <Link
                     href="/register"
+                    onClick$={closeMenu}
                     class="justify-center w-full btn-primary"
                   >
                     {t("nav.register")}
