@@ -63,7 +63,9 @@ export default component$(() => {
 
     if (token && favorites.length > 0) {
       const jobIds = favorites.map((job) => job.id);
-      const scores = await jobsState.fetchBatchMatchScores$(jobIds);
+      const scores = typeof jobsState.fetchBatchMatchScores$ === "function"
+        ? await jobsState.fetchBatchMatchScores$(jobIds)
+        : {};
       matchScores.value = scores;
     } else {
       matchScores.value = {};

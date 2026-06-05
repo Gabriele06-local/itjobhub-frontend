@@ -324,7 +324,9 @@ export default component$(() => {
 
     if (token && jobs.length > 0) {
       const jobIds = jobs.map((job) => job.id);
-      const scores = await jobsState.fetchBatchMatchScores$(jobIds);
+      const scores = typeof jobsState.fetchBatchMatchScores$ === "function"
+        ? await jobsState.fetchBatchMatchScores$(jobIds)
+        : {};
       matchScores.value = scores;
     } else {
       matchScores.value = {};

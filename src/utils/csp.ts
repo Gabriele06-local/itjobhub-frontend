@@ -10,7 +10,7 @@ const SCRIPT_HASHES = [
 const CLARITY_SCRIPT_ORIGINS =
   "https://www.clarity.ms https://scripts.clarity.ms";
 const CLARITY_CONNECT_ORIGINS =
-  "https://c.clarity.ms https://j.clarity.ms https://www.clarity.ms https://f.clarity.ms";
+  "https://c.clarity.ms https://j.clarity.ms https://www.clarity.ms https://f.clarity.ms https://l.clarity.ms";
 
 export function buildCsp(
   nonce?: string,

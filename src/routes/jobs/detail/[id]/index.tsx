@@ -190,7 +190,9 @@ export default component$(() => {
 
     // Fetch updated match score
     if (auth.token && updatedJob) {
-      const scoreData = await jobsContext.fetchJobMatchScore$(updatedJob.id);
+      const scoreData = typeof jobsContext.fetchJobMatchScore$ === "function"
+        ? await jobsContext.fetchJobMatchScore$(updatedJob.id)
+        : null;
       state.matchScore = scoreData;
     }
   });

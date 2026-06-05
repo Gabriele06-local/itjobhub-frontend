@@ -83,7 +83,9 @@ export default component$(() => {
     if (token && jobs.length > 0) {
       // Get scores for the first 3 jobs (displayed on homepage)
       const recentJobIds = jobs.slice(0, 3).map((job) => job.id);
-      const scores = await jobsState.fetchBatchMatchScores$(recentJobIds);
+      const scores = typeof jobsState.fetchBatchMatchScores$ === "function"
+        ? await jobsState.fetchBatchMatchScores$(recentJobIds)
+        : {};
       matchScores.value = scores;
     } else {
       matchScores.value = {};
